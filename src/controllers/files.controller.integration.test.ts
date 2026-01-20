@@ -8,12 +8,11 @@ import os from 'os';
 
 describe('files.controller', () => {
 
+    //Scaffolded express
     let app: express.Express;
-    let tempDir: string;
 
-    beforeEach(() => {
-        console.log('FILE_STORAGE_PATH:', process.env.FILE_STORAGE_PATH);
-    })
+    //Temp file base
+    let tempDir: string;
 
     beforeEach(async () => {
 
@@ -26,7 +25,7 @@ describe('files.controller', () => {
         app.get('/files', getFiles);
         app.get('/files/:filename', downloadFile);
 
-
+        console.log('using FILE_STORAGE_PATH:', process.env.FILE_STORAGE_PATH);
     });
 
     afterEach(async () => {
@@ -47,6 +46,7 @@ describe('files.controller', () => {
         expect(res.body.fileCount).toBe(1);
     });
 
+    //Check that we can't enumerate invalid locatioins
     it('GET /files/:filename with traversal attempt returns error', async () => {
         const res = await request(app).get('/files/..%2F..%2Fetc%2Fpasswd');
         expect(res.status).toBe(400);
@@ -57,8 +57,10 @@ describe('files.controller', () => {
         //Create a test file
         await fs.writeFile(path.join(tempDir, 'test.txt'), 'content');
 
+        //Get file
         const res = await request(app).get('/files/test.txt');
 
+        //Check
         expect(res.status).toBe(200);
     });
 });
