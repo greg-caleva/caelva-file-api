@@ -147,7 +147,7 @@ export class PairingStore {
                 version: 1,
                 pinHash,
                 keys: keys as KeyRecord[],
-            };            
+            };
         }
 
         //Initialize pinHash if missing
@@ -265,7 +265,14 @@ function getClientCertFingerprint256(req: Request): string | null {
 
 export function requireMtlsAndApiKey(store: PairingStore) {
     return (req: Request, res: Response, next: NextFunction) => {
-        // With rejectUnauthorized:true, untrusted clients won't connect,    
+
+        //Skip auth in dev mode
+        if (process.env.DEV_MODE === "true") {
+            next();
+            return;
+        }
+
+        // With rejectUnauthorized:true, untrusted clients won't connect,
         if (!isMtlsAuthorized(req)) {
             return res.status(401).json({ error: "mTLS required" });
         }

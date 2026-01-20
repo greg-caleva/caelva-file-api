@@ -1,4 +1,5 @@
 import https from "node:https";
+import http from "node:http";
 import fs from "node:fs";
 import express from "express";
 import dotenv from "dotenv";
@@ -10,7 +11,6 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
-import { logRequest } from "./middleware/logRequest";
 
 
 async function main() {
@@ -32,33 +32,37 @@ async function main() {
     app.use(helmet());
     app.use(express.json({ limit: "2mb" }));
 
-    //Log each request
-    app.use(logRequest);
-
     app.use("/health", healthRouter);
     app.use("/files", filesRouter);
-
 
     // 404 + error handling
     app.use(notFound);
     app.use(errorHandler);
 
-    //Read in required certs
-    //Ca: Certificate Authority (our own CA)
-    //Server: Our server cert signed by our CA
-    //Key: Private key for our server cert
-    const tlsOptions: https.ServerOptions = {
-        key: fs.readFileSync(`${process.env.CERT_DIR}/server.key`),
-        cert: fs.readFileSync(`${process.env.CERT_DIR}/server.crt`),
-        ca: fs.readFileSync(`${process.env.CERT_DIR}/ca.crt`),
-        requestCert: true,
-        rejectUnauthorized: true,
-    };
+    const devMode = process.env.DEV_MODE === "true";
 
-    //Start server and host on all interfaces
-    https.createServer(tlsOptions, app).listen(port, () => {
-        console.log(`mTLS API listening on https://0.0.0.0:${port}`);
-    });
+    if (devMode) {
+        //Dev mode: plain HTTP without certs
+        http.createServer(app).listen(port, () => {
+            console.log(`[DEV MODE] API listening on http://0.0.0.0:${port}`);
+        });
+    } else {
+        //Production: mTLS with certs
+        //Ca: Certificate Authority (our own CA)
+        //Server: Our server cert signed by our CA
+        //Key: Private key for our server cert
+        const tlsOptions: https.ServerOptions = {
+            key: fs.readFileSync(`${process.env.CERT_DIR}/server.key`),
+            cert: fs.readFileSync(`${process.env.CERT_DIR}/server.crt`),
+            ca: fs.readFileSync(`${process.env.CERT_DIR}/ca.crt`),
+            requestCert: true,
+            rejectUnauthorized: true,
+        };
+
+        https.createServer(tlsOptions, app).listen(port, () => {
+            console.log(`mTLS API listening on https://0.0.0.0:${port}`);
+        });
+    }
 }
 
 main().catch((e) => {
