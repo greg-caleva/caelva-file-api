@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi, afterAll, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
 import { getFiles, downloadFile } from './files.controller';
@@ -7,14 +7,13 @@ import path from 'path';
 import os from 'os';
 
 describe('files.controller', () => {
+
     let app: express.Express;
     let tempDir: string;
 
     beforeEach(() => {
         console.log('FILE_STORAGE_PATH:', process.env.FILE_STORAGE_PATH);
-        console.log('DATABASE_URL:', process.env.DATABASE_URL);
     })
-
 
     beforeEach(async () => {
 

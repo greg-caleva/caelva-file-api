@@ -10,8 +10,6 @@ import os from 'os';
 describe('getStorageLocation', () => {
     const originalEnv = process.env.FILE_STORAGE_PATH;
 
- 
-
     afterEach(() => {
         //Restore after each test
         process.env.FILE_STORAGE_PATH = originalEnv;
