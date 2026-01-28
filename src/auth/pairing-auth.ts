@@ -110,17 +110,15 @@ export class PairingStore {
         folderPath: string;
         pepper: string;
         pairPin?: string;
-        pairPinHash?: string;
     }) {
         this.folderPath = opts.folderPath;
         this.filePath = path.join(opts.folderPath, STORE_FILENAME);
         this.pepper = opts.pepper;
 
         this.pinPlainFromEnv = opts.pairPin;
-        this.pinHashFromEnv = opts.pairPinHash;
 
-        if (!this.pinPlainFromEnv && !this.pinHashFromEnv) {
-            throw new Error("Missing PAIR_PIN or PAIR_PIN_HASH");
+        if (!this.pinPlainFromEnv) {
+            throw new Error("Missing PAIR_PIN");
         }
 
         this.data = {
@@ -301,6 +299,11 @@ export function registerPairRoutes(app: Express, store: PairingStore) {
     //Post with pairing, through rate limiter
     app.post("/pair", pairRateLimit, async (req: Request, res: Response) => {
         try {
+
+            if (process.env.DEV_MODE === "true") {
+                return res.status(200).json({ apiKey: "TEST-KEY", keyId: "1" });
+            }
+
             //If mTLS not authorized, reject
             if (!isMtlsAuthorized(req)) {
                 return res.status(401).json({ error: "mTLS required" });
@@ -334,9 +337,9 @@ export async function createPairingStoreFromEnv(): Promise<PairingStore> {
     const folderPath = requireEnv("API_KEY_LOCATION");
     const pepper = requireEnv("API_KEY_PEPPER");
     const pairPin = process.env.PAIR_PIN;
-    const pairPinHash = process.env.PAIR_PIN_HASH;
+    // const pairPinHash = process.env.PAIR_PIN_HASH;
 
-    const store = new PairingStore({ folderPath, pepper, pairPin, pairPinHash });
+    const store = new PairingStore({ folderPath, pepper, pairPin });
     await store.load();
     return store;
 }

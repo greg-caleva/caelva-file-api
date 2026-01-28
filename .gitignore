@@ -1,6 +1,5 @@
 node_modules
 dist
 .env
-/data/files
 /config
-data
+/data/pairing.json

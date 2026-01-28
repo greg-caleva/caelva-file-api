@@ -33,10 +33,12 @@ COPY --from=builder /app/dist ./dist
 # Copy certs and seed data (to /app/seed so volume doesn't hide it)
 COPY certs ./certs
 COPY data/files ./seed/files
+COPY data/hardware ./seed/hardware
 
-# Copy entrypoint script and fix Windows line endings
+# Copy scripts and entrypoint, fix Windows line endings
+COPY scripts ./scripts
 COPY entrypoint.sh ./entrypoint.sh
-RUN sed -i 's/\r$//' ./entrypoint.sh && chmod +x ./entrypoint.sh
+RUN sed -i 's/\r$//' ./entrypoint.sh ./scripts/*.sh && chmod +x ./entrypoint.sh ./scripts/*.sh
 
 # Set environment variables (non-sensitive defaults)
 ENV NODE_ENV=production
@@ -44,6 +46,9 @@ ENV PORT=4004
 ENV CERT_DIR=/app/certs
 ENV FILE_STORAGE_PATH=/app/data/files
 ENV API_KEY_LOCATION=/app/data/config
+ENV DEMO_MODE=true
+ENV CALEVA_VERSION_LOCATION=/app/data/hardware/packageVersion.json
+ENV CALEVA_NEW_VERSION_LOCATION=/app/data/hardware/NEW_VERSION
 
 # Expose the port
 EXPOSE 4004

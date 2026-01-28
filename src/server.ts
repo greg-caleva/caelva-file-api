@@ -1,6 +1,6 @@
 import https from "node:https";
 import http from "node:http";
-import fs from "node:fs";
+import fs from "fs/promises";
 import express from "express";
 import dotenv from "dotenv";
 dotenv.config();
@@ -11,7 +11,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
-
+import path from "node:path";
 
 async function main() {
     const app = express();
@@ -41,7 +41,22 @@ async function main() {
 
     const devMode = process.env.DEV_MODE === "true";
 
-    if (devMode) {
+    if (process.env.CALEVA_VERSION_LOCATION === undefined) {
+        throw new Error("Missing CALEVA_VERSION_LOCATION");
+    }
+
+    if (process.env.CALEVA_NEW_VERSION_LOCATION === undefined) {
+        throw new Error("Missing CALEVA_NEW_VERSION_LOCATION");
+    }
+    if (process.env.FILE_STORAGE_PATH === undefined) {
+        throw new Error("Missing FILE_STORAGE_PATH");
+    }
+
+    //Make paths if they don't exist for storage and updates
+    await fs.mkdir(path.join(process.env.CALEVA_NEW_VERSION_LOCATION), { recursive: true });
+    await fs.mkdir(path.join(process.env.FILE_STORAGE_PATH), { recursive: true });
+
+    if (devMode) {       
         //Dev mode: plain HTTP without certs
         http.createServer(app).listen(port, () => {
             console.log(`[DEV MODE] API listening on http://0.0.0.0:${port}`);
@@ -52,9 +67,9 @@ async function main() {
         //Server: Our server cert signed by our CA
         //Key: Private key for our server cert
         const tlsOptions: https.ServerOptions = {
-            key: fs.readFileSync(`${process.env.CERT_DIR}/server.key`),
-            cert: fs.readFileSync(`${process.env.CERT_DIR}/server.crt`),
-            ca: fs.readFileSync(`${process.env.CERT_DIR}/ca.crt`),
+            key: await fs.readFile(`${process.env.CERT_DIR}/server.key`, "utf8"),
+            cert: await fs.readFile(`${process.env.CERT_DIR}/server.crt`, "utf8"),
+            ca: await fs.readFile(`${process.env.CERT_DIR}/ca.crt`, "utf8"),
             requestCert: true,
             rejectUnauthorized: true,
         };

@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    image: api:latest # explicit image name
+    container_name: caleva-file-api
+    ports:
+      - "4004:4004"
+    volumes:
+      - caleva-data:/app/data
+    environment:
+      - DEV_MODE=true
+      - API_KEY_PEPPER=SERGEANTPEPPERSLONELYHEARTSPEPPER
+      - PAIR_PIN=192837465
+      - PAIRING_STORE_PATH=/app/data/pairings.json
+
+volumes:
+  caleva-data:
