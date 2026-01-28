@@ -1,0 +1,31 @@
+# fly.toml app configuration file generated for caleva-data-api-demo on 2026-01-22T13:10:02Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'caleva-data-api-demo'
+primary_region = 'lhr'
+
+[build]
+
+[[mounts]]
+source = 'data_volume'
+destination = '/app/data'
+
+[[services]]
+internal_port = 4004
+protocol = "tcp"
+auto_stop_machines = 'stop'
+auto_start_machines = true
+min_machines_running = 1
+processes = ['app']
+
+[[services.ports]]
+port = 443
+handlers = []
+
+[[vm]]
+size = 'shared-cpu-1x'
+memory = '256mb'
+cpus = 1
+memory_mb = 256

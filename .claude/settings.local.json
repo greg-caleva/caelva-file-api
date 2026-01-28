@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"c:\\\\development\\\\caleva\\\\ideas\\\\caleva-data-api\\\\caleva-data-api\\\\docker-compose.yml\")"
+    ]
+  }
+}
