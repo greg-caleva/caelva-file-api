@@ -82,7 +82,6 @@ export const deleteFile = async (req: Request, res: Response) => {
 };
 
 export const uploadUpdateFile = async (req: Request, res: Response) => {
-
   if (!req.file) {
     return res.status(400).send('No file uploaded');
   }

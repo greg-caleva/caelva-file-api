@@ -10,8 +10,6 @@ export const getStorageLocation = () => {
     //Grab location from env
     const storageLocation = process.env.FILE_STORAGE_PATH;
 
-    console.log(storageLocation);
-
     //Ensure we have the storage location set
     if (!storageLocation) {
         throw new StorageLocationNotDefinedError();
@@ -210,7 +208,7 @@ export const validateUpdateZipName = async (zipName: string) => {
     const newVersionNumber = parseInt(extractedVersion.replace(".", ""))
     const currentVersionNumber = parseInt(currentVersion.replace(".", ""))
 
-    if (newVersionNumber < currentVersionNumber) {
+    if (newVersionNumber <= currentVersionNumber) {
         throw new InvalidNewVersionError();
     }
 
@@ -220,17 +218,12 @@ export const validateUpdateZipName = async (zipName: string) => {
 
 
 export const uploadUpdateFile = async (sourcePath: string, targetFilename: string) => {
-
     const hasPending = await hasUpdateFilePending();
     if (hasPending.pending) {
         throw new UpdateAlreadyPendingError();
     }
 
     const { target } = await validateNewVersionLocation();
-
-    console.log(target);
-    console.log(sourcePath);
-    console.log(targetFilename);
 
     await fs.copyFile(sourcePath, path.join(target, targetFilename));
 }

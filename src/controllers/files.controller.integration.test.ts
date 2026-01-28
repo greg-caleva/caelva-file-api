@@ -15,9 +15,11 @@ describe('files.controller', () => {
     //Temp file base
     let tempDir: string;    
     let tempVersionLocation: string;
+    let tempNewVersionLocation: string;
 
     const originalEnv = process.env.FILE_STORAGE_PATH;
     const originalEnvCalevaVersionLocation = process.env.CALEVA_VERSION_LOCATION;
+    const originalEnvCalevaNewVersionLocation = process.env.CALEVA_NEW_VERSION_LOCATION;
 
 
     beforeEach(async () => {
@@ -29,6 +31,9 @@ describe('files.controller', () => {
         tempVersionLocation = await fs.mkdtemp(path.join(os.tmpdir(), 'file-service-test-version-'));
         process.env.CALEVA_VERSION_LOCATION = path.join(tempVersionLocation, "packageVersion.json");
 
+        tempNewVersionLocation = await fs.mkdtemp(path.join(os.tmpdir(), 'file-service-test-version-NEW-'));
+        process.env.CALEVA_NEW_VERSION_LOCATION = path.join(tempNewVersionLocation);
+
         //Create a test package version
         await fs.writeFile(path.join(tempVersionLocation, "packageVersion.json"), JSON.stringify({ packageVersion: "2.35" }));
 
@@ -38,17 +43,18 @@ describe('files.controller', () => {
         app.get('/files', getFiles);
         app.get('/files/:filename', downloadFile);
         app.delete('/files/:filename', deleteFile);
-        app.post('/files/update/:filename', upload.single('upload'), uploadUpdateFile);
-
-        console.log('using FILE_STORAGE_PATH:', process.env.FILE_STORAGE_PATH);
+        app.post('/files/update', upload.single('upload'), uploadUpdateFile);
     });
 
     afterEach(async () => {
         //Clear up the directory on after each
         await fs.rm(tempDir, { recursive: true, force: true });
+        await fs.rm(tempVersionLocation, { recursive: true, force: true });
+        await fs.rm(tempNewVersionLocation, { recursive: true, force: true });
 
         process.env.FILE_STORAGE_PATH = originalEnv;
         process.env.CALEVA_VERSION_LOCATION = originalEnvCalevaVersionLocation;
+        process.env.CALEVA_NEW_VERSION_LOCATION = originalEnvCalevaNewVersionLocation;
     });
 
     it('GET /files returns file list', async () => {
@@ -90,12 +96,14 @@ describe('files.controller', () => {
         //Get file
         const res = await request(app).delete('/files/test.txt');
 
+        
+
         //Check
         expect(res.status).toBe(200);
 
     });
 
-    it('POST /files/:update/filename uploads an update zip', async () => {
+    it('POST /files/:update uploads an update zip', async () => {
 
         //Create a test file to upload
         const testFilePath = path.join(tempDir, 'update2.36.zip');

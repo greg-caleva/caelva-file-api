@@ -3,3 +3,5 @@ dist
 .env
 /config
 /data/pairing.json
+
+file-server.zip

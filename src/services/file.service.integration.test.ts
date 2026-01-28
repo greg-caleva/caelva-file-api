@@ -5,7 +5,7 @@ import { DirectoryNotFoundError, InvalidPathError, NotAFileError, StorageLocatio
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { InvalidCalevaPackageVersion, InvalidNewVersionError, InvalidUpdateZipNameError, InvalidUpdateZipNameVersionError, VersionStorageLocationNotDefinedError, VersionStorageLocationNotFoundError } from '../errors/update/updateErrors';
+import { InvalidCalevaPackageVersion, InvalidNewVersionError, InvalidUpdateZipNameError, InvalidUpdateZipNameVersionError, TargetUpdateLocationNotDefinedError, TargetUpdateLocationNotValidError, UpdateAlreadyPendingError, VersionStorageLocationNotDefinedError, VersionStorageLocationNotFoundError } from '../errors/update/updateErrors';
 
 
 describe('getStorageLocation', () => {
@@ -248,6 +248,78 @@ describe('validateUpdateZipName', () => {
         expect(currentVersion).toBeDefined();
         expect(currentVersion).toBe("2.35");
     });
+
+
+});
+
+
+describe('hasUpdateFilePending > validateNewVersionLocation', () => {
+    let tempDir: string;
+    let tempNewVersionLocation: string;
+
+    const originalEnv = process.env.FILE_STORAGE_PATH;
+    const originalEnvCalevaNewVersionLocation = process.env.CALEVA_NEW_VERSION_LOCATION;
+
+    beforeEach(async () => {
+        //Create a unique temp NEW UPDATE directory for each test
+        tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'file-service-test-'));
+        tempNewVersionLocation = await fs.mkdtemp(path.join(os.tmpdir(), 'file-service-test-version-NEW-'));
+
+        process.env.FILE_STORAGE_PATH = tempDir;
+        process.env.CALEVA_NEW_VERSION_LOCATION = path.join(tempNewVersionLocation);
+    });
+
+
+    afterEach(async () => {
+        //Clean up temp dir after each test
+        await fs.rm(tempDir, { recursive: true, force: true });
+        await fs.rm(tempNewVersionLocation, { recursive: true, force: true });
+
+        //Restore after each test
+        process.env.FILE_STORAGE_PATH = originalEnv;
+        process.env.CALEVA_NEW_VERSION_LOCATION = originalEnvCalevaNewVersionLocation
+    });
+
+
+    it("should throw TargetUpdateLocationNotDefinedError for when location not specified", async () => {
+
+        delete process.env.CALEVA_NEW_VERSION_LOCATION
+
+        await expect(fileService.hasUpdateFilePending())
+            .rejects.toThrow(TargetUpdateLocationNotDefinedError);
+    });
+
+    it("should throw UpdateAlreadyPendingError for when file already exists", async () => {
+
+        const tPath = path.join(tempNewVersionLocation, "NOTADIRECTORY.zip");
+        await fs.writeFile(tPath, "content");        
+
+
+        const { file, pending } = await fileService.hasUpdateFilePending();
+
+        expect(pending).toBe(true);
+        expect(file).toBeDefined();
+    });
+
+    it("should throw TargetUpdateLocationNotValidError for when location not a directory", async () => {
+
+        const tPath = path.join(tempNewVersionLocation, "NOTADIRECTORY.txt");
+        await fs.writeFile(tPath, "content");
+        process.env.CALEVA_NEW_VERSION_LOCATION = tPath;
+
+        await expect(fileService.hasUpdateFilePending())
+            .rejects.toThrow(TargetUpdateLocationNotValidError);
+    });
+
+    it("should return good values when no update pending", async () => {      
+
+        const { file, pending } = await fileService.hasUpdateFilePending();
+
+        expect(pending).toBe(false);
+        expect(file).toBe(null);
+            
+    });
+
 
 
 });
